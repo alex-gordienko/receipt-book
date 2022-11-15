@@ -4,6 +4,10 @@ body, #root {
   overflow: auto;
 }
 
+#root > div:last-child {
+  height: calc(100vh - 50px);
+}
+
 a {
   position: relative;
 }

@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { FontSizeHeader } from '../../../styles/globalParams';
+import { FontSizeHeader, FontSizeTitle } from '../../../styles/globalParams';
 
 export const ReaderContainer = styled.div`
   display: flex;
@@ -56,4 +56,17 @@ export const ReaderContentBlockContentText = styled.div`
   height: 100%;
   overflow-y: scroll;
   margin: 0 20px;
+`;
+
+export const ReceiptLikesBlock = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  justify-content: space-evenly;
+`;
+
+export const LikesCounter = styled.p`
+  margin: 5px;
+  font-size: ${FontSizeTitle};
 `;

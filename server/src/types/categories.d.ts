@@ -4,6 +4,8 @@ declare namespace categories {
     parentId: ObjectId | null;
     status: 'active' | 'archived';
 
+    likes: number;
+
     createdAt: Date;
     updatedAt: Date;
   }

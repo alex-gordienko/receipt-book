@@ -13,6 +13,8 @@ export const articlesRoutes = (): Router => {
 
   articles.put('/edit/:id', safeExecuteRoute(articlesController.editArticle));
 
+  articles.put('/like/:id', safeExecuteRoute(articlesController.likeArticle));
+
   articles.delete('/:id', safeExecuteRoute(articlesController.deleteArticle));
 
   return articles;

@@ -1,12 +1,17 @@
 import axios, { AxiosError } from 'axios';
 
-const serverAddress = 'http://localhost:5001';
+export const serverAddress = 'http://192.168.2.36:5001';
 
 export interface IListResponse<T> { totalCount: number; items: T[] }
 
 const get = async <TResponse>(path: string): Promise<TResponse> => {
+  const token = localStorage.getItem('token');
+
   try {
-    const response = await axios.get(serverAddress + path);
+    const response = await axios.get(
+      serverAddress + path,
+      { headers: { authorization: `Bearer ${token}` } }
+    );
     return response.data
   } catch (err) {
     if (err instanceof AxiosError && err.response) {
@@ -16,8 +21,14 @@ const get = async <TResponse>(path: string): Promise<TResponse> => {
   }
 }
 const post = async <TData, TResponse>(path: string, data: TData): Promise<TResponse> => {
+  const token = localStorage.getItem('token');
+
   try {
-    const response = await axios.post(serverAddress + path, data);
+    const response = await axios.post(
+      serverAddress + path,
+      data,
+      { headers: { authorization: `Bearer ${token}` } }
+    );
     return response.data
   } catch (err) {
     if (err instanceof AxiosError && err.response) {
@@ -28,8 +39,14 @@ const post = async <TData, TResponse>(path: string, data: TData): Promise<TRespo
 }
 
 const put = async <TData, TResponse>(path: string, data: TData): Promise<TResponse> => {
+  const token = localStorage.getItem('token');
+
   try {
-    const response = await axios.put(serverAddress + path, data);
+    const response = await axios.put(
+      serverAddress + path,
+      data,
+      { headers: { authorization: `Bearer ${token}` } }
+    );
     return response.data
   } catch (err) {
     if (err instanceof AxiosError && err.response) {
@@ -39,9 +56,14 @@ const put = async <TData, TResponse>(path: string, data: TData): Promise<TRespon
   }
 }
 
-const del = async <TResponse, >(path: string): Promise<TResponse> => {
+const del = async <TResponse,>(path: string): Promise<TResponse> => {
+  const token = localStorage.getItem('token');
+  
   try {
-    const response = await axios.delete(serverAddress + path);
+    const response = await axios.delete(
+      serverAddress + path,
+      { headers: { authorization: `Bearer ${token}` } }
+    );
     return response.data
   } catch (err) {
     if (err instanceof AxiosError && err.response) {
@@ -95,6 +117,18 @@ export const deleteReceipt = async (receiptId: string) =>
 
 export const deleteCategory = async (categoryId: string) =>
   del(`/categories/${categoryId}`);
+
+export const likeItem = async (item: 'articles' | 'receipts' | 'categories', id: string) =>
+  put<undefined, void>(`/${item}/like/${id}`, undefined);
+
+export const login = async (login: string, pass: string) =>
+  post<user.IAuthorizeData, { token: string }>(`/user`, { login, pass });
+
+export const getUser = async () =>
+  get<user.IUser>(`/user`);
+
+export const signupUser = async (userData: user.ICreateUser) =>
+  post<user.ICreateUser, { token: string }>('/user/create', userData);
 
 export class RequestError extends Error {
   public statusCode: number;

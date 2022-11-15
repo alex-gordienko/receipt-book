@@ -14,6 +14,8 @@ export const receiptsRoutes = (
 
   receipts.put('/edit/:id', safeExecuteRoute(receiptsController.editReceipt));
 
+  receipts.put('/like/:id', safeExecuteRoute(receiptsController.likeReceipt));
+
   receipts.delete('/:id', safeExecuteRoute(receiptsController.deleteReceipt));
 
   return receipts;

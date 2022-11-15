@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from '../../../store';
-import { setServerError, setWebError } from "../../../store/actions";
+import { setServerError, setWebError, subscribeToArticles } from "../../../store/actions";
 import BreadCrumps from "../../components/BreadCrumps";
-import { deleteArticle, editArticle, getArticle, isRequestError } from "../../helpers/httpConnector";
-import { ButtonBase, EditButton, DeleteButton, ButtonContainer } from "../../../styles/globalParams";
+import { deleteArticle, editArticle, getArticle, isRequestError, likeItem } from "../../helpers/httpConnector";
+import { ButtonBase, EditButton, DeleteButton, ButtonContainer, OKButton } from "../../../styles/globalParams";
 import {
   ReaderContainer,
   ReaderContentBlock,
@@ -13,10 +13,13 @@ import {
   ReaderContentBlockContent,
   ReaderContentBlockTextBlock,
   ReaderContentBlockContentText,
-  ReaderContentBlockContentImage
+  ReaderContentBlockContentImage,
+  ArticleLikesBlock,
+  LikesCounter
 } from "./styled";
 import ArticleEditor from "../../components/editors/ArticleEditor";
 import Modal from "../../components/Modal";
+import { useSocketEvents } from "../../../hooks/useSocketEvents";
 
 
 const ReaderPage: React.FC<{}> = (props) => {
@@ -24,24 +27,37 @@ const ReaderPage: React.FC<{}> = (props) => {
   const { categoryId, id } = useParams();
   const navigate = useNavigate();
   const [article, setArticle] = useState<articles.IDBArticles>();
+  const [likes, setLikes] = useState(0);
   const [openEditor, setOpenEditor] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   const routePath = window.location.pathname.split('/');
   const isArticle = routePath.includes('article');
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (isArticle && id && !article) {
-        try {
-          setArticle(await getArticle(id));
-        } catch (error) {
-          setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
-        }
+  const loadData = useCallback(async (articleId: string, action: 'create' | 'update' | 'delete' | 'like') => {
+    console.log(action);
+    if (action === 'create' || action === 'update' || action === 'delete') {
+      try {
+        const responseArticle = await getArticle(articleId);
+        subscribeToArticles(dispatch, [articleId]);
+        setArticle(responseArticle);
+        setLikes(responseArticle.likes || 0);
+      } catch (error) {
+        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
       }
     }
-    loadData();
-  }, [article, dispatch, id, isArticle]);
+    if (action === 'like') {
+      setLikes(likes + 1);
+    }
+  }, [dispatch, likes]);
+
+  useEffect(() => {
+    if (isArticle && id && !article) {
+      loadData(id, 'update');
+    }
+  }, [article, dispatch, id, isArticle, loadData]);
+
+  useSocketEvents(state.socket, 'article', ['update', 'like'], loadData);
 
   const handleClickBack = () => {
     const pathTo = `/categories/${categoryId}?articlesPage=${state.pageArticles}&receiptsPage=${state.pageReceipts}`;
@@ -79,6 +95,12 @@ const ReaderPage: React.FC<{}> = (props) => {
       }
     }
   }
+  const handleLike = async () => {
+    if (article) {
+      await likeItem('articles', article._id)
+      setLikes(likes + 1);
+    }
+  }
 
   const renderContentBody = () => {
     if ((!categoryId || !id) || !isArticle) {
@@ -95,6 +117,10 @@ const ReaderPage: React.FC<{}> = (props) => {
             <ButtonBase onClick={handleClickBack}>Go back</ButtonBase>
             <ReaderContentBlockTitle>Article "{article.title}"</ReaderContentBlockTitle>
             <ButtonContainer>
+            <ArticleLikesBlock>
+              <LikesCounter>{likes} likes</LikesCounter>
+              <OKButton onClick={handleLike}>Like</OKButton>
+            </ArticleLikesBlock>
               {state.isAdmin ? (
                 <>
                   <EditButton onClick={handleClickEdit}>Edit Receipt</EditButton>

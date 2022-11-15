@@ -3,6 +3,8 @@ import MainPage from './shared/pages/Main/Main';
 import { createBrowserRouter, RouterProvider, RouteObject } from 'react-router-dom';
 import ReceiptReaderPage from './shared/pages/ReceiptReader/Reader';
 import ArticleReaderPage from './shared/pages/ArticleReader/Reader';
+import Authorization from './shared/pages/Authorization';
+import Header from './shared/components/Header';
 
 
 const App = () => {
@@ -11,6 +13,22 @@ const App = () => {
     {
       path: '/',
       element: <MainPage />
+    },
+    {
+      path: '/login',
+      element: <Authorization mode={"Authorization"}/>
+    },
+    {
+      path: '/admin/login',
+      element: <Authorization mode={"Authorization"}/>
+    },
+    {
+      path: '/signup',
+      element: <Authorization mode={"Registration"}/>
+    },
+    {
+      path: '/admin/signup',
+      element: <Authorization mode={"Registration"}/>
     },
     {
       path: '/categories/:categoryId',
@@ -41,11 +59,21 @@ const App = () => {
       element: <ArticleReaderPage />
     },
   ];
+
+  const routesWithHeader = routes.map((routeObj: RouteObject) => ({
+    path: routeObj.path,
+    element: (
+      <>
+        <Header />
+        {routeObj.element}
+      </>
+    )
+  }))
   
-  const router = createBrowserRouter(routes);
+  const router = createBrowserRouter(routesWithHeader);
   return (
     <Store>
-      <RouterProvider router={router} /> 
+      <RouterProvider router={router} />
     </Store>
   );
 }

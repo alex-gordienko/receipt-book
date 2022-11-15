@@ -13,6 +13,8 @@ export const categoryRoutes = (): Router => {
 
   categories.put('/edit/:id', safeExecuteRoute(categoryController.editCategory));
 
+  categories.put('/like/:id', safeExecuteRoute(categoryController.likeCategory));
+
   categories.delete('/:id', safeExecuteRoute(categoryController.deleteCategory));
 
   return categories;

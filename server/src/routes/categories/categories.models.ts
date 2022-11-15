@@ -1,9 +1,12 @@
 import { ObjectId, WithId } from 'mongodb';
-import { notFound } from '../../helpers/responses';
+import LikeBuffer from '../../buffer/likes.buffer';
+import { handleCashedData, handleOverwriteCache, notFound } from '../../helpers/responses';
 import { useDatabase } from '../../hooks/useDatabase';
 
-class CategoriesModel {
+export class CategoriesModel {
+  private likesController = new LikeBuffer('category');
 
+  @handleCashedData('category', 50)
   public async findById (id: ObjectId): Promise<WithId<categories.IDBCategory> | null> {
     return useDatabase.categoriesDatabase.findOne({ _id: id, $or: [{ status: { $exists: false } }, { status: 'active' }] });
   }
@@ -16,6 +19,7 @@ class CategoriesModel {
     return category
   }
 
+  @handleCashedData('category', 50)
   public async findByName(title: string): Promise<WithId<categories.IDBCategory> | null> {
     return useDatabase.categoriesDatabase.findOne({ title });
   }
@@ -30,17 +34,20 @@ class CategoriesModel {
     return category
   }
 
+  @handleCashedData('category', 50)
   public async listCategories(): Promise<WithId<categories.IDBCategory>[]> {
     const searchResult = await useDatabase.categoriesDatabase.find({ $or: [{ status: { $exists: false } }, { status: 'active' }] }).toArray();
     
     return searchResult.map((category: WithId<categories.IDBCategory>) => ({...category, status: category.status || 'active'}))
   }
 
+  @handleOverwriteCache('category')
   public async createNewCategory(category: categories.ICategoryCreate): Promise<WithId<categories.IDBCategory>> {
     const createCategoryData = {
       ...category,
       parentId: category.parentId ? new ObjectId(category.parentId) : null,
       status: 'active' as 'active',
+      likes: 0,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -50,10 +57,14 @@ class CategoriesModel {
   public async getChainListOfCategory(categoryId: string): Promise<string[]> {
     return useDatabase.redisClient.lRange(categoryId, 0, -1);
   }
+  public async deleteChainListOfCategory(categoryId: string | string[]): Promise<number> {
+    return useDatabase.redisClient.del(categoryId);
+  }
 
+  @handleOverwriteCache('category')
   public async updateCategory(category: WithId<categories.IDBCategory>, dataToUpdate: categories.ICategoryEdit) {
-    const updated = await useDatabase.categoriesDatabase.updateOne(
-      { _id: category._id },
+    await useDatabase.categoriesDatabase.updateOne(
+      { _id: new ObjectId(category._id) },
       { $set: {
         ...dataToUpdate,
         status: category.status || 'active',
@@ -61,11 +72,21 @@ class CategoriesModel {
         updatedAt: new Date()
       }}
     );
+    const updated = (await useDatabase.categoriesDatabase.findOne({ _id: new ObjectId(category._id), $or: [{ status: { $exists: false } }, { status: 'active' }] }))!
     return updated
   }
+
+  @handleOverwriteCache('category')
+  public async likeCategory (categoryId: string) {
+    this.likesController.like(categoryId);
+  }
+
+  @handleOverwriteCache('category')
   public async archiveCategory(categoryId: ObjectId) {
     return useDatabase.categoriesDatabase.updateOne({ _id: categoryId }, { $set: {status: 'archived'}});
   }
+
+  @handleOverwriteCache('category')
   public async deleteCategory(categoryId: ObjectId) {
     return useDatabase.categoriesDatabase.deleteOne({ _id: categoryId });
   }

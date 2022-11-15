@@ -33,7 +33,6 @@ const Pagination: React.FC<IPaginationProps> = ({
     const rightPagesToRender = currentPage <= croppedPages.length - 1 ? 2 : currentPage === croppedPages.length ? 1 : 0;
 
     const currentPageIndex = croppedPages.findIndex((page: number) => page === currentPage);
-    console.log({currentPageIndex, leftPagesToRender, rightPagesToRender})
 
     const renderPages = croppedPages.map((page: number, index) => {
       if (index < currentPageIndex - leftPagesToRender || index > currentPageIndex + rightPagesToRender) {

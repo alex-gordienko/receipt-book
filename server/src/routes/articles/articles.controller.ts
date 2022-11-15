@@ -1,17 +1,20 @@
 import { RequestHandler } from 'express';
-import { ObjectId, UpdateResult, WithId } from 'mongodb';
+import { ObjectId, WithId } from 'mongodb';
 import { articlesModel } from './articles.models';
 import { badRequest } from '../../helpers/responses';
 import { validateCreationArticle, validateEditArticle } from './articles.validator';
 import { isValidObjectID } from '../../validators/mongo-id.validator';
+import { articlesSocketEvents } from './articles.socketEvents';
 
 type GetArticles = RequestHandler<{ id: string }, WithId<articles.IDBArticles>, {}, {}>;
 type GetArticlesOfCategory = RequestHandler<{ id: string }, { totalCount: number; items: WithId<articles.IDBArticles>[] }, {}, { page: string, pageSize: string }>;
 type CreateArticle = RequestHandler<{}, WithId<articles.IDBArticles>, articles.IArticleCreate, {}>;
-type EditArticle = RequestHandler<{ id: string }, UpdateResult, articles.IArticleEdit, {}>;
+type EditArticle = RequestHandler<{ id: string }, WithId<articles.IDBArticles>, articles.IArticleEdit, {}>;
+type LikeArticle = RequestHandler<{ id: string }, {}, {}, {}>;
 type DeleteArticle = RequestHandler<{ id: string }, {}, {}, {}>;
 
 class ArticlesController {
+
   public getArticles: GetArticles = async (req, res) => {
 
     if (!isValidObjectID(req.params.id)) {
@@ -38,6 +41,8 @@ class ArticlesController {
 
     const newArticle = await articlesModel.createNewArticle(requestArticle, validCategory._id);
 
+    articlesSocketEvents.broadcastSendCallToCreate(newArticle.categoryId.toString(), newArticle._id.toString())
+
     res.status(200).send(newArticle);
   }
 
@@ -53,20 +58,36 @@ class ArticlesController {
 
     const editedReceipt = await articlesModel.updateArticle(isArticleExists, requestArticle);
 
+    articlesSocketEvents.broadcastSendCallToUpdate(req.params.id);
+
     res.status(200).send(editedReceipt);
+  }
+
+  public likeArticle: LikeArticle = async (req, res) => {
+    if (!isValidObjectID(req.params.id)) {
+      throw badRequest('Article Id should be provided');
+    }
+    
+    await articlesModel.likeArticle(req.params.id);
+
+    articlesSocketEvents.broadcastSendCallToLike(req.params.id);
+
+    res.sendStatus(200);
   }
 
   public deleteArticle: DeleteArticle = async (req, res) => {
 
     if (!isValidObjectID(req.params.id)) {
-      throw badRequest('Receipt Id should be provided');
+      throw badRequest('Article Id should be provided');
     }
 
     const articleId = new ObjectId(req.params.id);
 
-    const deleteReceipt = await articlesModel.deleteArticle(articleId);
+    const deleteArticle = await articlesModel.deleteArticle(articleId);
 
-    res.status(200).send(deleteReceipt);
+    articlesSocketEvents.broadcastSendCallToDelete(req.params.id);
+
+    res.status(200).send(deleteArticle);
   }
 }
 

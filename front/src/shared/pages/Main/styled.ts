@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { FontSizeHeader } from '../../../styles/globalParams';
+import { FontSizeHeader, FontSizeTitle } from '../../../styles/globalParams';
 
 export const MainContainer = styled.div`
   display: flex;
@@ -39,4 +39,9 @@ export const MainRightBlockContent = styled.div`
   justify-content: space-between;
   flex: 1;
   margin: 20px 0;
-`
+`;
+
+export const LikesCounter = styled.p`
+  margin: 5px;
+  font-size: ${FontSizeTitle};
+`;

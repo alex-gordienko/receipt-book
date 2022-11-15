@@ -7,11 +7,9 @@ import { categoryModel } from './categories.models';
 class CategoriesService {
 
   public async checkBeforeUpdate(categoryId: ObjectId, parentId: ObjectId) {
+    const newCategoryPosition = await categoryModel.getChainListOfCategory(parentId.toString());
 
-    const newParent = await categoryModel.findByIdWithCheck(new ObjectId(parentId));
-    const newCategoryPosition = await categoryModel.getChainListOfCategory(newParent._id.toString());
-
-    if (newCategoryPosition.includes(categoryId.toString())) {
+    if (!newCategoryPosition || newCategoryPosition.includes(categoryId.toString())) {
       throw badRequest('Try to assign parent category to his child');
     }
 

@@ -10,7 +10,7 @@ import {
   EditorRowSelect,
   EditorRowSelectContainer,
   EditorRowSelectOption
-} from './styled';
+} from '../../../../styles/globalParams';
 
 interface ICategoryEditorProps {
   open: boolean;

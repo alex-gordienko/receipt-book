@@ -12,6 +12,7 @@ export const createApp = async () => {
 
   app.use(cors());
   app.use(bodyParser.json());
+
   app.use(async (req, _res, next) => {
     try {
       await logRequestMiddleware(req, useDatabase.loggerPool);

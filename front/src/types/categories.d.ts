@@ -5,6 +5,8 @@ declare namespace categories {
     parentId: string | null;
     status?: 'active' | 'archived';
 
+    likes?: number;
+
     createdAt: string;
     updatedAt: string;
   }

@@ -11,7 +11,7 @@ import {
   EditorRowSelect,
   EditorRowSelectContainer,
   EditorRowSelectOption
-} from './styled';
+} from '../../../../styles/globalParams';
 
 interface IArticleEditorProps {
   open: boolean;

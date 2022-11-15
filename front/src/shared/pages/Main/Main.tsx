@@ -14,11 +14,21 @@ import {
   getCategoriesList
 } from '../../helpers/httpConnector';
 import { cropLongText } from '../../helpers/textHelpers';
-import { MainContainer, MainRightBlock, MainRightBlockTopHeader, MainRightBlockContent, MainRightBlockTitle } from './styled';
+import { MainContainer, MainRightBlock, MainRightBlockTopHeader, MainRightBlockContent, MainRightBlockTitle, LikesCounter } from './styled';
 import { ArticleContainer, ArticleTitle, ArticleContent, ArticleShortDescription } from "./articles.styled";
 import { ReceiptContainer, ReceiptTitle } from "./receipts.styled";
 import { AppContext } from '../../../store';
-import { saveCategoryList, saveArticlesPage, saveReceiptsPage, setServerError } from "../../../store/actions";
+import {
+  subscribeToCategory,
+  saveCategoryList,
+  saveArticlesPage,
+  saveReceiptsPage,
+  setServerError,
+  subscribeToArticles,
+  unsubscribeFromArticles,
+  subscribeToReceipts,
+  unsubscribeFromReceipts
+} from "../../../store/actions";
 import { useQuery } from "../../helpers/useQuery";
 import { useParams, useNavigate } from "react-router-dom";
 import BreadCrumps from "../../components/BreadCrumps";
@@ -27,7 +37,7 @@ import ArticleEditor from "../../components/editors/ArticleEditor";
 import CategoryEditor from "../../components/editors/CategoryEditor";
 import Modal from '../../components/Modal';
 import { ButtonContainer, DeleteButton, EditButton } from "../../../styles/globalParams";
-
+import { useSocketEvents } from "../../../hooks/useSocketEvents";
 
 const MainPage: React.FC<{}> = () => {
   const { state, dispatch } = useContext(AppContext);
@@ -46,47 +56,108 @@ const MainPage: React.FC<{}> = () => {
   const articlesPage = Number(query.get('articlesPage') || 1);
   const receiptsPage = Number(query.get('receiptsPage') || 1);
 
-  useEffect(() => {
-    const loadCategoryArticles = async (page: number) => {
-      if (categoryId) {
-        try {
-          const articles = await getArticlesOfCategory(categoryId, page, 20);
-          setArticles(articles);
-        } catch (error) {
-          setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
-        }
-      }
-    };
-    loadCategoryArticles(articlesPage);
-  }, [articlesPage, categoryId, dispatch]);
-
-  useEffect(() => {
-    const loadCategoryReceipts = async (page: number) => {
-      if (categoryId) {
-        try {
-          const receipts = await getReceiptsOfCategory(categoryId, page, 20);
-          setReceipts(receipts);
-        } catch (error) {
-          setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
-        }
-      }
-    };
-    loadCategoryReceipts(receiptsPage);
-  }, [receiptsPage, categoryId, dispatch]);
-
-  useEffect(() => {
-    const loadCategoryData = async () => {
-      if (categoryId) {
-        try {
-          const selectedCategory = await getCategory(categoryId);
-          setSelectedCategory(selectedCategory);
-        } catch (error) {
-          setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
-        }
+  const loadCategoryData = useCallback(async () => {
+    if (categoryId) {
+      try {
+        subscribeToCategory(dispatch, categoryId);
+        const selectedCategory = await getCategory(categoryId);
+        setSelectedCategory(selectedCategory);
+      } catch (error) {
+        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
       }
     }
+  }, [categoryId, dispatch]);
+
+  const loadCategoryArticles = useCallback(async (page: number) => {
+    if (categoryId) {
+      try {
+        if (articles.items.length) {
+          unsubscribeFromArticles(dispatch, articles.items.map((article) => article._id));
+        }
+        const responseArticles = await getArticlesOfCategory(categoryId, page, state.pageSize);
+        subscribeToArticles(dispatch, responseArticles.items.map((article) => article._id));
+        setArticles(responseArticles);
+      } catch (error) {
+        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+      }
+    }
+  }, [articles.items.length, categoryId, dispatch, state.pageSize]);
+
+  const loadCategoryReceipts = useCallback(async (page: number) => {
+    if (categoryId) {
+      try {
+        if (receipts.items.length) {
+          unsubscribeFromReceipts(dispatch, receipts.items.map((receipt) => receipt._id));
+        }
+        const responseReceipts = await getReceiptsOfCategory(categoryId, page, state.pageSize);
+        subscribeToReceipts(dispatch, responseReceipts.items.map((receipt) => receipt._id));
+        setReceipts(responseReceipts);
+      } catch (error) {
+        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+      }
+    }
+  }, [categoryId, dispatch, receipts.items.length, state.pageSize]);
+
+  useEffect(() => {
+    loadCategoryArticles(articlesPage);
+  }, [articlesPage, categoryId, dispatch, loadCategoryArticles]);
+
+  useEffect(() => {
+    loadCategoryReceipts(receiptsPage);
+  }, [receiptsPage, categoryId, dispatch, loadCategoryReceipts]);
+
+  useEffect(() => {
     loadCategoryData();
-  }, [state.categoriesList, categoryId, dispatch]);
+  }, [state.categoriesList, categoryId, dispatch, loadCategoryData]);
+
+  const processCategorySocketEvents = useCallback(async (categoryId: string) => {
+    console.log(categoryId);
+    try {
+      await loadCategoryData();
+      const result = await getCategoriesList();
+      saveCategoryList(dispatch, result);
+    } catch (error) {
+      setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+    }
+  }, [dispatch, loadCategoryData]);
+
+  const processArticleSocketEvent = useCallback((articleId: string, action: 'create'|'update'|'delete'|'like') => {
+    console.log(articleId);
+    const isArticleInLoadedList = articles.items.find(article => article._id === articleId);
+    if (
+      (action === 'like' && isArticleInLoadedList) ||
+      (action === 'update' && isArticleInLoadedList) ||
+      (action === 'delete' && isArticleInLoadedList) ||
+      (action === 'create' && !isArticleInLoadedList)
+    ) {
+      try {
+        loadCategoryArticles(articlesPage);
+      } catch (error) {
+        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+      }
+    }
+  }, [articles.items.length, articlesPage, dispatch, loadCategoryArticles]);
+
+  const processReceiptSocketEvent = useCallback((receiptId: string, action: 'create'|'update'|'delete'|'like') => {
+    const isReceiptInLoadedList = receipts.items.find(receipt => receipt._id === receiptId);
+    console.log(receiptId);
+    if (
+      (action === 'like' && isReceiptInLoadedList) ||
+      (action === 'update' && isReceiptInLoadedList) ||
+      (action === 'delete' && isReceiptInLoadedList) ||
+      (action === 'create' && !isReceiptInLoadedList)
+    ) {
+      try {
+        loadCategoryReceipts(articlesPage);
+      } catch (error) {
+        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+      }
+    }
+  }, [articlesPage, dispatch, loadCategoryReceipts, receipts.items.length]);
+
+  useSocketEvents(state.socket, 'category', ['update', 'like'], processCategorySocketEvents);
+  useSocketEvents(state.socket, 'receipt', ['create', 'delete', 'update', 'like'], processReceiptSocketEvent);
+  useSocketEvents(state.socket, 'article', ['create', 'delete', 'update', 'like'], processArticleSocketEvent);
 
   const handleArticleClick = (articleId: string) => {
     const goToPath = `/categories/${categoryId}/read/article/${articleId}`;
@@ -102,23 +173,25 @@ const MainPage: React.FC<{}> = () => {
     navigate(state.isAdmin ? '/admin' + goToPath : goToPath);
   }
 
-  const renderArticles = (article: articles.IDBArticles): JSX.Element => {
+  const RenderArticles: React.FC<articles.IDBArticles> = (props) => {
     return (
-      <ArticleContainer key={article._id} onClick={() => handleArticleClick(article._id)}>
-        <ArticleContent>
-          <ArticleTitle>{cropLongText(article.title)}</ArticleTitle>
+      <ArticleContainer key={props._id}>
+        <ArticleContent onClick={() => handleArticleClick(props._id)}>
+          <ArticleTitle>{cropLongText(props.title)}</ArticleTitle>
           <ArticleShortDescription>
-            {cropLongText(article.shortDescription)}
+            {cropLongText(props.shortDescription)}
           </ArticleShortDescription>
         </ArticleContent>
+        {props.likes ? (<LikesCounter>{props.likes} likes</LikesCounter>) : null}
       </ArticleContainer>
     )
   }
 
-  const renderReceipts = (receipt: receipts.IDBReceipt): JSX.Element => {
+  const RenderReceipts: React.FC<receipts.IDBReceipt> = (props) => {
     return (
-      <ReceiptContainer key={receipt._id} onClick={() => handleReceiptClick(receipt._id)}>
-        <ReceiptTitle>{cropLongText(receipt.title)}</ReceiptTitle>
+      <ReceiptContainer key={props._id} onClick={() => handleReceiptClick(props._id)}>
+        <ReceiptTitle>{cropLongText(props.title)}</ReceiptTitle>
+        {props.likes ? (<LikesCounter>{props.likes} likes</LikesCounter>) : null}
       </ReceiptContainer>
     )
   }
@@ -219,8 +292,8 @@ const MainPage: React.FC<{}> = () => {
             data={articles.items}
             totalCount={articles.totalCount}
             page={articlesPage}
-            pageSize={20}
-            renderAs={renderArticles}
+            pageSize={state.pageSize}
+            renderAs={RenderArticles}
             onCallNextPage={onCallNextPageArticles}
           />
           <ListComponent
@@ -230,8 +303,8 @@ const MainPage: React.FC<{}> = () => {
             data={receipts.items}
             totalCount={receipts.totalCount}
             page={receiptsPage}
-            pageSize={20}
-            renderAs={renderReceipts}
+            pageSize={state.pageSize}
+            renderAs={RenderReceipts}
             onCallNextPage={onCallNextPageReceipts}
           />
         </MainRightBlockContent>

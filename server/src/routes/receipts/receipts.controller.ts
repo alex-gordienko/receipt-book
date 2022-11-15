@@ -1,14 +1,16 @@
 import { RequestHandler } from 'express';
-import { ObjectId, UpdateResult, WithId } from 'mongodb';
+import { ObjectId, WithId } from 'mongodb';
 import { badRequest } from '../../helpers/responses';
 import { isValidObjectID } from '../../validators/mongo-id.validator';
 import { receiptsModel } from './receipts.models';
+import { receiptsSocketEvents } from './receipts.socketEvents';
 import { validateCreationReceipt, validateEditReceipt } from './receipts.validator';
 
 type GetReceipt = RequestHandler<{ id: string }, WithId<receipts.IDBReceipt>, {}, {}>;
 type GetReceiptsOfCategory = RequestHandler<{ id: string }, { totalCount: number; items: WithId<receipts.IDBReceipt>[] }, {}, { page: string, pageSize: string }>;
 type CreateReceipt = RequestHandler<{}, WithId<receipts.IDBReceipt>, receipts.IReceiptCreate, {}>;
-type EditReceipt = RequestHandler<{ id: string }, UpdateResult, receipts.IReceiptEdit, {}>;
+type EditReceipt = RequestHandler<{ id: string }, WithId<receipts.IDBReceipt>, receipts.IReceiptEdit, {}>;
+type LikeReceipt = RequestHandler<{ id: string }, {}, {}, {}>;
 type DeleteReceipt = RequestHandler<{ id: string }, {}, {}, {}>;
 
 class ReceiptsController {
@@ -28,6 +30,7 @@ class ReceiptsController {
     }      
 
     const result = await receiptsModel.listByCategory(new ObjectId(req.params.id), req.query.page, req.query.pageSize);
+
     res.send(result);
   };
 
@@ -37,6 +40,8 @@ class ReceiptsController {
     const isCategoryValid = await validateCreationReceipt(requestReceipt);
 
     const newReceipt = await receiptsModel.createNewReceipt(requestReceipt, isCategoryValid._id);
+
+    receiptsSocketEvents.broadcastSendCallToCreate(newReceipt.categoryId.toString(), newReceipt._id.toString());
 
     res.status(200).send(newReceipt);
   }
@@ -55,7 +60,21 @@ class ReceiptsController {
 
     const editedReceipt = await receiptsModel.updateReceipt(existedReceipt, requestReceipt);
 
+    receiptsSocketEvents.broadcastSendCallToUpdate(req.params.id);
+
     res.status(200).send(editedReceipt);
+  }
+
+  public likeReceipt: LikeReceipt = async (req, res) => {
+    if (!isValidObjectID(req.params.id)) {
+      throw badRequest('Category Id should be provided');
+    }
+    
+    receiptsModel.likeCategory(req.params.id);
+
+    receiptsSocketEvents.broadcastSendCallToLike(req.params.id);
+
+    res.sendStatus(200);
   }
 
   public deleteReceipt: DeleteReceipt = async (req, res) => {
@@ -67,6 +86,8 @@ class ReceiptsController {
     const receiptId = new ObjectId(req.params.id);
 
     const deleteReceipt = await receiptsModel.deleteReceipt(receiptId);
+
+    receiptsSocketEvents.broadcastSendCallToDelete(req.params.id);
 
     res.status(200).send(deleteReceipt);
   }

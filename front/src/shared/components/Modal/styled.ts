@@ -1,10 +1,9 @@
 import styled from 'styled-components';
-import { ButtonBase } from '../../../styles/globalParams';
 
 export const ModalFullScreenContainer = styled.div`
   position: absolute;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 50px);
   z-index: 5000;
   display: flex;
   align-items: center;

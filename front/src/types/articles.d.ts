@@ -6,6 +6,8 @@ declare namespace articles {
     longDescription: string;
     categoryId: string;
 
+    likes?: number;
+
     createdAt: string;
     updatedAt: string;
   }

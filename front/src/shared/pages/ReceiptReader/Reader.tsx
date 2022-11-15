@@ -1,11 +1,11 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from '../../../store';
-import { setServerError, setWebError } from "../../../store/actions";
-import { ButtonBase, EditButton, DeleteButton, ButtonContainer } from "../../../styles/globalParams";
+import { setServerError, setWebError, subscribeToReceipts } from "../../../store/actions";
+import { ButtonBase, EditButton, DeleteButton, ButtonContainer, OKButton } from "../../../styles/globalParams";
 import BreadCrumps from "../../components/BreadCrumps";
 import ReceiptEditor from "../../components/editors/ReceiptEditor";
-import { getReceipt, editReceipt, isRequestError, deleteReceipt } from "../../helpers/httpConnector";
+import { getReceipt, editReceipt, isRequestError, deleteReceipt, likeItem } from "../../helpers/httpConnector";
 import Modal from '../../components/Modal';
 import {
   ReaderContainer,
@@ -14,33 +14,49 @@ import {
   ReaderContentBlockTitle,
   ReaderContentBlockContent,
   ReaderContentBlockContentText,
-  ReaderContentBlockContentImage
+  ReaderContentBlockContentImage,
+  ReceiptLikesBlock,
+  LikesCounter
 } from "./styled";
+import { useSocketEvents } from "../../../hooks/useSocketEvents";
 
 const ReaderPage: React.FC<{}> = () => {
   const { state, dispatch } = useContext(AppContext);
   const { categoryId, id } = useParams();
   const navigate = useNavigate();
   const [receipt, setReceipt] = useState<receipts.IDBReceipt>();
+  const [likes, setLikes] = useState(0);
   const [openEditor, setOpenEditor] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   
   const routePath = window.location.pathname.split('/');
   const isReceipt = routePath.includes('receipt');
 
-  const loadReceipt = async () => {
-    if (isReceipt && id && !receipt) {
+  const loadData = useCallback(async (receiptId: string, action: 'create' | 'update' | 'delete' | 'like') => {
+    console.log(action);
+    if (action === 'create' || action === 'update' || action === 'delete') {
       try {
-        setReceipt(await getReceipt(id));
+        const responseReceipt = await getReceipt(receiptId);
+        subscribeToReceipts(dispatch, [receiptId]);
+        setReceipt(responseReceipt);
+        setLikes(responseReceipt.likes || 0);
       } catch (error) {
         setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
       }
     }
-  }
+    if (action === 'like') {
+      setLikes(likes + 1);
+    }
+  }, [dispatch, likes]);
 
   useEffect(() => {
-    loadReceipt();
-  }, [dispatch, id, isReceipt, receipt]);
+    if (isReceipt && id && !receipt) {
+      loadData(id, 'update');
+    }
+  }, [receipt, dispatch, id, isReceipt, loadData]);
+
+  useSocketEvents(state.socket, 'receipt', ['update', 'like'], loadData);
+  
 
   const handleClickBack = () => {
     const pathTo = `/categories/${categoryId}?articlesPage=${state.pageArticles}&receiptsPage=${state.pageReceipts}`;
@@ -79,6 +95,13 @@ const ReaderPage: React.FC<{}> = () => {
     }
   }
 
+  const handleLike = async () => {
+    if (receipt) {
+      await likeItem('receipts', receipt._id)
+      setLikes(likes + 1);
+    }
+  }
+
   const renderContentBody = () => {
     if ((!categoryId || !id) || !isReceipt) {
       setWebError(dispatch, { withRedirect: true, errors: ['Incorrect Url. Accept "/categories/:id/read/(receipt|article)/:id"']});
@@ -94,6 +117,10 @@ const ReaderPage: React.FC<{}> = () => {
             <ButtonBase onClick={handleClickBack}>Go back</ButtonBase>
             <ReaderContentBlockTitle>Receipt "{receipt.title}"</ReaderContentBlockTitle>
             <ButtonContainer>
+            <ReceiptLikesBlock>
+              <LikesCounter>{likes} likes</LikesCounter>
+              <OKButton onClick={handleLike}>Like</OKButton>
+            </ReceiptLikesBlock>
               {state.isAdmin ? (
                 <>
                   <EditButton onClick={handleClickEdit}>Edit Receipt</EditButton>

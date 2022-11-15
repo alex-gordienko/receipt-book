@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { FontSizeSubtitle } from '../../../styles/globalParams';
 
 export const ReceiptContainer = styled.div`
   display: flex;
@@ -11,12 +12,22 @@ export const ReceiptContainer = styled.div`
   align-items: center;
   cursor: pointer;
   transition: all .6s;
+  font-size: ${FontSizeSubtitle};
+  flex-direction: column;
 
   &:hover {
     box-shadow: 14px 15px 7px -8px rgba(0, 0, 0, 0.6);
     width: 210px;
     height: 180px;
   }
+`;
+
+export const ReceiptsContent = styled.div`
+  display: flex;
+  width: 100%;
+  height: auto;
+  flex-direction: column;
+  align-items: center;
 `;
 
 export const ReceiptTitle = styled.p`

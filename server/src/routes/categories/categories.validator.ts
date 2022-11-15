@@ -11,7 +11,7 @@ export const createCategorySchema = Joi.object<categories.ICategoryCreate>({
 
 export const editCategorySchema = Joi.object<categories.ICategoryEdit>({
   title: Joi.string().optional(),
-  parentId: Joi.string().optional()
+  parentId: Joi.string().optional().allow(null)
 });
 
 export const validateCategoryCreation = async (reqBody: categories.ICategoryCreate) => {

@@ -27,7 +27,6 @@ const buildChainOfOneCategory = async (category: WithId<categories.IDBCategory>,
       const parent = await categoryList.find((category: WithId<categories.IDBCategory>) =>
         category._id.equals(new ObjectId(chainList[chainList.length - 1]))
       );
-      console.log('parent', parent?.title);
       if (!parent || !parent.parentId) {
         break;
       }
@@ -39,26 +38,36 @@ const buildChainOfOneCategory = async (category: WithId<categories.IDBCategory>,
       chainList.push(parentId);
     }
   }
-  console.log('Category', category.title, chainList.join(' <- '));
+  // console.log('Category', category.title, chainList.join(' <- '));
   useDatabase.redisClient.rPush(category._id.toString(), chainList);
 }
 
 const buildChainOfCategories = async (categoryId?: string): Promise<void> => {
-  const categoryList = await useDatabase.categoriesDatabase.find().toArray();
+  try {
+    const categoryList = await useDatabase.categoriesDatabase.find().toArray();
 
-  if (!categoryId) { 
-    const categoryListKeys = categoryList.map((category) => category._id.toString());
-    useDatabase.redisClient.del(categoryListKeys);
+    if (!categoryId) {
+      const categoryListKeys = categoryList.map((category) => category._id.toString());
+      useDatabase.redisClient.del(categoryListKeys);
 
-    for (const category of categoryList) {
-      await buildChainOfOneCategory(category, categoryList)
+      for (const category of categoryList) {
+        await buildChainOfOneCategory(category, categoryList)
+      }
+      console.timeEnd('index-all-categories');
+      return;
     }
-    console.timeEnd('index-all-categories');
-    return;
+
+    const currentChain = await categoryModel.getChainListOfCategory(categoryId);
+    const categoriesToUpdate = categoryList.filter((cat: WithId<categories.IDBCategory>) => currentChain.includes(cat._id.toString()));
+
+    await categoryModel.deleteChainListOfCategory(categoryId);
+
+    for (const categoryToUpdate of categoriesToUpdate) {
+      await buildChainOfOneCategory(categoryToUpdate, categoryList);
+    }
+  } catch (error) {
+    console.error(error);
   }
-  const category = categoryList.find((categoryToCheck: WithId<categories.IDBCategory>) => categoryToCheck._id.equals(categoryId))!;
-  useDatabase.redisClient.del(category._id.toString());
-  await buildChainOfOneCategory(category, categoryList);
   console.timeEnd('re-index-category');
 }
 

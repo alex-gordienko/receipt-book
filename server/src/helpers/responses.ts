@@ -1,8 +1,14 @@
 import { RequestHandler, Request, Response, NextFunction } from "express";
 import Joi from "joi";
+import { useDatabase } from "../hooks/useDatabase";
+import { ArticlesModel } from "../routes/articles/articles.models";
+import { CategoriesModel } from "../routes/categories/categories.models";
+import { ReceiptsModel } from "../routes/receipts/receipts.models";
+import { createHash } from "./decriptor";
 
 type ErrorReason =
   | 'BadRequest'
+  | 'Unathorized'
   | 'Conflict'
   | 'Failed'
   | 'Forbidden'
@@ -29,6 +35,63 @@ const isRequestError = (error: unknown): error is RequestError => {
     (typeof (error as Record<string, unknown>).message === 'string' || typeof (error as Record<string, unknown>).message === 'object') &&
     typeof (error as Record<string, unknown>).statusCode === 'number'
   )
+}
+
+export const requestFullUrl = (req: Request): string => {
+  const protocol = req.protocol;
+    const host = req.hostname;
+    const url = req.originalUrl;
+    const port = process.env.PORT;
+
+  return `${protocol}://${host}:${port}${url}`;
+}
+
+type ExtendObject = ArticlesModel | CategoriesModel | ReceiptsModel;
+
+export const handleCashedData = (prefix: string, storeTime: number): any => {
+  console.log(`Storing for ${storeTime} seconds`);
+  return (_target: ExtendObject, name: string, descriptor: PropertyDescriptor) => {
+    console.log(prefix, name, ' called');
+    const original = descriptor.value;
+
+    descriptor.value = async function (...args: any) {
+      console.log('params: ', args);
+
+      const cachedName = `${prefix}-${name}-${createHash(JSON.stringify(args), `${prefix}-${name}-${JSON.stringify(args)}`)}`;
+
+      const cashedResult = await useDatabase.redisClient.get(cachedName);
+      if (cashedResult) {
+        console.log(cachedName, '- return from cache');
+        return JSON.parse(cashedResult)
+      }
+      console.log(cachedName, '- return from database');
+      const result = await original.call(this, ...args);
+      useDatabase.redisClient.setEx(cachedName, storeTime, JSON.stringify(result));
+      return result;
+    }
+  }
+}
+
+export const handleOverwriteCache = (prefix: string): any => {
+  return (_target: ExtendObject, name: string, descriptor: PropertyDescriptor) => {
+    console.log(prefix, name, ' called');
+    const original = descriptor.value;
+
+    descriptor.value = async function (...args: any) {
+      try {
+        const searchResult = await useDatabase.redisClient.keys(`${prefix}-*`);
+        if (searchResult.length) {
+          console.log('Delete from cache', searchResult);
+          useDatabase.redisClient.del(searchResult);
+        }
+
+        const result = await original.call(this, ...args);
+        return result;
+      } catch (err) {
+        console.log('Error in handleOverwriteCache', err);
+      }
+    }
+  }
 }
 
 export const safeExecuteRoute = (cb: RequestHandler<any, any, any, any>): (req: Request, res: Response, next: NextFunction) => Promise<void> => {
@@ -76,6 +139,15 @@ export const notFound = (
   return errorResponse(
     404,
     'NotFound',
+    message
+  )
+}
+
+export const unauthorized = (message: string) => {
+  console.log('unauthorized', message);
+  return errorResponse(
+    401,
+    'Unathorized',
     message
   )
 }

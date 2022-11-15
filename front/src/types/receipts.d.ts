@@ -5,6 +5,8 @@ declare namespace receipts {
     description: string;
     categoryId: string;
 
+    likes?: number;
+
     createdAt: string;
     updatedAt: string;
   }

@@ -1,7 +1,9 @@
 import styled from 'styled-components';
+import { FontSizeSubtitle } from '../../../styles/globalParams';
 
 export const ArticleContainer = styled.div`
   display: flex;
+  flex-direction: column;
   width: 200px;
   height: 170px;
   border: 1px solid;
@@ -11,6 +13,7 @@ export const ArticleContainer = styled.div`
   align-items: center;
   cursor: pointer;
   transition: all .6s;
+  font-size: ${FontSizeSubtitle};
 
   &:hover {
     box-shadow: 14px 15px 7px -8px rgba(0, 0, 0, 0.6);
@@ -32,5 +35,5 @@ export const ArticleTitle = styled.p`
 `;
 
 export const ArticleShortDescription = styled(ArticleTitle)`
-  max-width: fit-content;
+  max-width: 90%;
 `;

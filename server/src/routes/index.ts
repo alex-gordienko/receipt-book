@@ -3,6 +3,7 @@ import { useDatabase } from '../hooks/useDatabase';
 import { articlesRoutes } from './articles';
 import { receiptsRoutes } from './receipts';
 import { categoryRoutes } from './categories';
+import { userRoutes } from './user';
 
 export const Home = (
   app: express.Express,
@@ -25,4 +26,5 @@ export const Home = (
   app.use('/articles', articlesRoutes());
   app.use('/receipts', receiptsRoutes());
   app.use('/categories', categoryRoutes());
+  app.use('/user', userRoutes());
 }

@@ -9,7 +9,7 @@ interface IListComponent<T> {
   pageSize: number;
   totalCount: number;
   data?: T[];
-  renderAs: (elem: T, index: number) => JSX.Element;
+  renderAs: React.FC<T>;
   onCallNextPage: (newPage: number) => void;
   onCallCreateElement?: (title: string) => void;
 }
