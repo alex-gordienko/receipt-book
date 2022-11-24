@@ -9,7 +9,6 @@ export interface IAppState {
   pageReceipts: number;
   pageArticles: number;
   errors: string[];
-  redirectToMain: boolean;
 }
 
 const Reducer = (state: IAppState, action: IAppActions): IAppState => {
@@ -27,14 +26,12 @@ const Reducer = (state: IAppState, action: IAppActions): IAppState => {
     case 'SERVER_ERROR':
       return {
         ...state,
-        errors: action.payload.errors,
-        redirectToMain: action.payload.withRedirect
+        errors: action.payload.errors
       };
     case 'WEB_ERROR':
       return {
         ...state,
         errors: action.payload.errors,
-        redirectToMain: action.payload.withRedirect
       };
     case 'CLEAR_ERRORS':
       return {

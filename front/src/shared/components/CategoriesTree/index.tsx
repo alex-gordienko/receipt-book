@@ -54,7 +54,7 @@ const CategoriesTree: React.FC<{}> = () => {
       const pathTo = `/categories/${createdCategory._id}?articlesPage=1&receiptsPage=1`;
       navigate(state.isAdmin ? '/admin' + pathTo : pathTo);
     } catch (error) {
-      setServerError(dispatch, { withRedirect: false, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+      setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
     }
   }
 

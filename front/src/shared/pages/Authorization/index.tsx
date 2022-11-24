@@ -26,7 +26,7 @@ const Authorization: React.FC<IAuthorization> = (props) => {
         window.location.replace(state.isAdmin ? '/admin' : '/');
       } catch (error) {
         console.error(error);
-        setServerError(dispatch, { withRedirect: false, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
       }
     }
     if (props.mode === 'Registration') {
@@ -36,7 +36,7 @@ const Authorization: React.FC<IAuthorization> = (props) => {
         window.location.replace(state.isAdmin ? '/admin' : '/');
       } catch (error) {
         console.error(error);
-        setServerError(dispatch, { withRedirect: false, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
       }
     }
   }

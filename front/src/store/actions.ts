@@ -3,8 +3,8 @@ interface IReducerFormat<Type extends String, Payload> {
   payload: Payload;
 }
 
-export type IServerErrorAction = IReducerFormat<'SERVER_ERROR', { withRedirect: boolean, errors:string[] }>;
-export type IWebErrorAction = IReducerFormat<'WEB_ERROR', { withRedirect: boolean, errors:string[] }>;
+export type IServerErrorAction = IReducerFormat<'SERVER_ERROR', { errors:string[] }>;
+export type IWebErrorAction = IReducerFormat<'WEB_ERROR', { errors:string[] }>;
 export type IClearErrors = IReducerFormat<'CLEAR_ERRORS', undefined>;
 export type ISetArticlesPage = IReducerFormat<'SET_ARTICLES_PAGE', number>;
 export type ISetReceiptsPage = IReducerFormat<'SET_RECEIPTS_PAGE', number>;
@@ -58,11 +58,11 @@ export const saveReceiptsPage = (dispatch: (value: IReducerActions) => void, pay
   return dispatch({ type: 'SET_RECEIPTS_PAGE', payload });
 }
 
-export const setServerError = (dispatch: (value: IReducerActions) => void, payload: { withRedirect: boolean, errors:string[] }) => {
+export const setServerError = (dispatch: (value: IReducerActions) => void, payload: { errors:string[] }) => {
   return dispatch({ type: 'SERVER_ERROR', payload });
 }
 
-export const setWebError = (dispatch: (value: IReducerActions) => void, payload: { withRedirect: boolean, errors:string[] }) => {
+export const setWebError = (dispatch: (value: IReducerActions) => void, payload: { errors:string[] }) => {
   return dispatch({ type: 'WEB_ERROR', payload });
 }
 

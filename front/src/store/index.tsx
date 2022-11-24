@@ -15,8 +15,7 @@ const initialState: IAppState = {
   categoriesList: [],
   pageReceipts: 1,
   pageArticles: 1,
-  errors: [],
-  redirectToMain: true
+  errors: []
 };
 
 export const AppContext = createContext<{
@@ -59,7 +58,7 @@ const Store: React.FC<{children: JSX.Element}> = ({children}) => {
           console.log('!token || !state.user');
           window.location.replace(state.isAdmin ? '/admin/login' : '/login');
         }
-        setServerError(dispatch, { withRedirect: false, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
       }
     }
     loadUser();
@@ -67,26 +66,23 @@ const Store: React.FC<{children: JSX.Element}> = ({children}) => {
 
   useEffect(() => {
     const getTree = async () => {
-      if (!state.categoriesList.length) {
+      if (!state.categoriesList.length && !routePath.includes('login')) {
         try {
           const result = await getCategoriesList();
           saveCategoryList(dispatch, result);
         } catch (err) {
-          setServerError(dispatch, {withRedirect: true, errors: [JSON.stringify(err)]})
+          setServerError(dispatch, {errors: [JSON.stringify(err)]})
         }
       }
     };
     getTree();
-  }, [dispatch, state.categoriesList.length]);
+  }, [dispatch, routePath, state.categoriesList.length]);
 
   const renderErrorModal = () => {
     const handleAcceptClick = () => {
       clearErrors(dispatch);
       if (!state.user) {
         window.location.replace('/login');
-      }
-      if (state.redirectToMain) {
-        window.location.replace(state.isAdmin ? '/admin' : '/')
       }
     }
 

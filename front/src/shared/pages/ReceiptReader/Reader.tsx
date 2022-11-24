@@ -41,7 +41,7 @@ const ReaderPage: React.FC<{}> = () => {
         setReceipt(responseReceipt);
         setLikes(responseReceipt.likes || 0);
       } catch (error) {
-        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
       }
     }
     if (action === 'like') {
@@ -74,7 +74,7 @@ const ReaderPage: React.FC<{}> = () => {
         setReceipt(await getReceipt(id));
         setOpenEditor(false);
       } catch (error) {
-        setServerError(dispatch, { withRedirect: false, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
       }
     }
   }
@@ -90,7 +90,7 @@ const ReaderPage: React.FC<{}> = () => {
         setOpenDeleteDialog(false);
         handleClickBack()
       } catch (error) {
-        setServerError(dispatch, { withRedirect: false, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
       }
     }
   }
@@ -104,7 +104,7 @@ const ReaderPage: React.FC<{}> = () => {
 
   const renderContentBody = () => {
     if ((!categoryId || !id) || !isReceipt) {
-      setWebError(dispatch, { withRedirect: true, errors: ['Incorrect Url. Accept "/categories/:id/read/(receipt|article)/:id"']});
+      setWebError(dispatch, { errors: ['Incorrect Url. Accept "/categories/:id/read/(receipt|article)/:id"']});
       return (
         <ReaderContentBlockTitle>Please, select Receipt</ReaderContentBlockTitle>
       )
@@ -144,7 +144,7 @@ const ReaderPage: React.FC<{}> = () => {
   }
 
   if ((!categoryId || !id) || !isReceipt) {
-    setWebError(dispatch, { withRedirect: true, errors: ['Incorrect Url. Accept "/categories/:id/read/(receipt|article)/:id"']});
+    setWebError(dispatch, { errors: ['Incorrect Url. Accept "/categories/:id/read/(receipt|article)/:id"']});
     return (
       <ReaderContentBlockTitle>Please, select Receipt</ReaderContentBlockTitle>
     )

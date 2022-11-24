@@ -63,7 +63,7 @@ const MainPage: React.FC<{}> = () => {
         const selectedCategory = await getCategory(categoryId);
         setSelectedCategory(selectedCategory);
       } catch (error) {
-        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
       }
     }
   }, [categoryId, dispatch]);
@@ -78,7 +78,7 @@ const MainPage: React.FC<{}> = () => {
         subscribeToArticles(dispatch, responseArticles.items.map((article) => article._id));
         setArticles(responseArticles);
       } catch (error) {
-        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
       }
     }
   }, [articles.items.length, categoryId, dispatch, state.pageSize]);
@@ -93,7 +93,7 @@ const MainPage: React.FC<{}> = () => {
         subscribeToReceipts(dispatch, responseReceipts.items.map((receipt) => receipt._id));
         setReceipts(responseReceipts);
       } catch (error) {
-        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
       }
     }
   }, [categoryId, dispatch, receipts.items.length, state.pageSize]);
@@ -117,7 +117,7 @@ const MainPage: React.FC<{}> = () => {
       const result = await getCategoriesList();
       saveCategoryList(dispatch, result);
     } catch (error) {
-      setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+      setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
     }
   }, [dispatch, loadCategoryData]);
 
@@ -133,7 +133,7 @@ const MainPage: React.FC<{}> = () => {
       try {
         loadCategoryArticles(articlesPage);
       } catch (error) {
-        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
       }
     }
   }, [articles.items.length, articlesPage, dispatch, loadCategoryArticles]);
@@ -150,7 +150,7 @@ const MainPage: React.FC<{}> = () => {
       try {
         loadCategoryReceipts(articlesPage);
       } catch (error) {
-        setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
+        setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] })
       }
     }
   }, [articlesPage, dispatch, loadCategoryReceipts, receipts.items.length]);
@@ -210,7 +210,7 @@ const MainPage: React.FC<{}> = () => {
       const createdArticle = await createArticle(newArticle);
       handleArticleClick(createdArticle._id);
     } catch (error) {
-      setServerError(dispatch, { withRedirect: false, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+      setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
     }
   }
 
@@ -219,7 +219,7 @@ const MainPage: React.FC<{}> = () => {
       const createdReceipt = await createReceipt(newReceipt);
       handleReceiptClick(createdReceipt._id);
     } catch (error) {
-      setServerError(dispatch, { withRedirect: false, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+      setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
     }
   }
 
@@ -251,7 +251,7 @@ const MainPage: React.FC<{}> = () => {
       saveCategoryList(dispatch, [...filteredCategories, { ...selectedCategory, ...newCategory }]);
       setOpenCategoryEditor(false);
     } catch (error) {
-      setServerError(dispatch, { withRedirect: false, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+      setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
     }
   }
 
@@ -264,7 +264,7 @@ const MainPage: React.FC<{}> = () => {
       setSelectedCategory(null);
       setOpenDeleteDialog(false);
     } catch (error) {
-      setServerError(dispatch, { withRedirect: true, errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
+      setServerError(dispatch, { errors: isRequestError(error) ? [error.message] : [JSON.stringify(error)] });
     }
   }
 

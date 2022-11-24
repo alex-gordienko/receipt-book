@@ -35,7 +35,8 @@ class UserServices {
         lastname: userData.lastname,
         phone: userData.phone,
         email: userData.email,
-        status: accountData.status
+        status: accountData.status,
+        isAdmin: accountData.isAdmin
       }
     } catch (error) {
       console.error(error);
@@ -57,6 +58,7 @@ class UserServices {
         email: 'DELETED',
         phone: 'DELETED',
         userPrivateId: new ObjectId(),
+        isAdmin: false
       }
     } catch (err) {
       console.error(err)
@@ -72,7 +74,8 @@ class UserServices {
     const userAccount = await useDatabase.accountsDatabase.insertOne({
       login: userHash.login,
       saltedHashPass: hashedSaltedPassword,
-      status: 'active'
+      status: 'active',
+      isAdmin: userData.isAdmin
     })
 
     await useDatabase.usersDatabase.insertOne({
@@ -101,7 +104,8 @@ class UserServices {
       firstname: updatedUserData.firstname || existedUser.firstname,
       lastname: updatedUserData.lastname || existedUser.lastname,
       phone: updatedUserData.phone || existedUser.phone,
-      email: updatedUserData.email || existedUser.email
+      email: updatedUserData.email || existedUser.email,
+      isAdmin: updatedUserData.isAdmin || existedUser.isAdmin
     };
 
     if (updatedUserData.login && updatedUserData.login !== updatedUserData.oldLogin) {
@@ -131,7 +135,8 @@ class UserServices {
       lastname: dataToUpdate.lastname,
       status: existedUser.status,
       phone: dataToUpdate.phone,
-      email: dataToUpdate.email
+      email: dataToUpdate.email,
+      isAdmin: dataToUpdate.isAdmin
     }
   }
 

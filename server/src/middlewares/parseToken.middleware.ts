@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import * as jwt from 'jsonwebtoken';
 import { secret } from "../config";
-import { badRequest, unauthorized } from "../helpers/responses";
+import { unauthorized } from "../helpers/responses";
 
 
 export const parseBearerToken = (cb: RequestHandler<any, any, any, any>): (req: Request, res: Response, next: NextFunction) => Promise<void> => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    console.log(req.originalUrl);
+    console.log('parseBearerToken', req.originalUrl);
     const bearerHeader = req.headers['authorization'];
 
     if (bearerHeader) {
@@ -24,7 +24,7 @@ export const parseBearerToken = (cb: RequestHandler<any, any, any, any>): (req: 
         return cb(req, res, next);
       } catch (err) {
         console.error(err);
-        throw badRequest('Error while verify token');
+        throw unauthorized('Error while verify token');
       }
     }
     if (req.originalUrl !== '/user' && req.originalUrl !== '/user/create' && req.method !== 'POST') {

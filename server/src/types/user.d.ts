@@ -12,7 +12,8 @@ declare namespace user {
   interface IAccountDB {
     login: string;
     saltedHashPass: string;
-    status: 'active' | 'deleted'
+    status: 'active' | 'deleted';
+    isAdmin: boolean;
   }
 
   interface IUserDB {
@@ -31,13 +32,16 @@ declare namespace user {
   interface ICreateUser extends
     IAuthorizeData,
     Pick<IUserDB, 'firstname' | 'lastname' | 'phone' | 'email'>
-  { }
+  {
+    isAdmin: boolean;
+  }
 
   interface IEditUser extends
     Partial<IAuthorizeData>,
     Partial<Pick<IUserDB, 'firstname' | 'lastname' | 'phone' | 'email'>>
   {
     oldLogin: string;
-    oldPass: string
+    oldPass: string;
+    isAdmin?: boolean;
   }
 }

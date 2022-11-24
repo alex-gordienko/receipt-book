@@ -1,4 +1,4 @@
-import { RequestHandler, Request, Response, NextFunction } from "express";
+import { Request } from "express";
 import Joi from "joi";
 import { useDatabase } from "../hooks/useDatabase";
 import { ArticlesModel } from "../routes/articles/articles.models";
@@ -16,7 +16,7 @@ type ErrorReason =
   | 'TooManyRequests'
   | 'ValidationError';
 
-class RequestError extends Error {
+export class RequestError extends Error {
   public statusCode: number;
   public message: string;
   constructor(name: string, status: number, message: string) {
@@ -24,17 +24,6 @@ class RequestError extends Error {
     this.statusCode = status;
     this.message = message;
   }
-}
-
-const isRequestError = (error: unknown): error is RequestError => {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    'statusCode' in error &&
-    (typeof (error as Record<string, unknown>).message === 'string' || typeof (error as Record<string, unknown>).message === 'object') &&
-    typeof (error as Record<string, unknown>).statusCode === 'number'
-  )
 }
 
 export const requestFullUrl = (req: Request): string => {
@@ -94,27 +83,6 @@ export const handleOverwriteCache = (prefix: string): any => {
   }
 }
 
-export const safeExecuteRoute = (cb: RequestHandler<any, any, any, any>): (req: Request, res: Response, next: NextFunction) => Promise<void> => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      await cb(req, res, next);
-    } catch (err) {
-      let statusCode = 500;
-      let statusMessage = 'Failed';
-      let message = 'Something went wrong';
-      console.log(err);
-      if (isRequestError(err)) {
-        statusMessage = err.name;
-        statusCode = err.statusCode;
-        message = err.message;
-      }
-      console.log({statusCode, statusMessage, message});
-      res.statusMessage = statusMessage;
-      res.status(statusCode).send(message);
-    }
-  }
-}
-
 export const failed = (message: string) => {
   console.log('failed', message);
   return errorResponse(
@@ -148,6 +116,15 @@ export const unauthorized = (message: string) => {
   return errorResponse(
     401,
     'Unathorized',
+    message
+  )
+}
+
+export const forbidden = (message: string) => {
+  console.log('forbidden', message);
+  return errorResponse(
+    403,
+    'Forbidden',
     message
   )
 }

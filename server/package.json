@@ -4,7 +4,7 @@
   "description": "test task for full-stack position, receipt book",
   "main": "./build/index.js",
   "scripts": {
-    "dev": "tsc --build && sleep 1 && NODE_ENV=dev node ./build/index.js",
+    "dev": "tsc --build && sleep 1 && NODE_ENV=dev SECRET=MIIBOgIBAAJBAKmSV299k11nhI7c+kpBu9HtDwZMfkSQFaIpBngvniq5DHTBiBEAUP63mMS7fC00OABZtkq1TH4ZAVkr5ih4F30CAwEAAQJAVdhqP10Zb53qc9DXPSSOCzax9oRfICK5cQDH76xbrFBwfkiYx2JQVNTmwML/zJsHeU7WWm6oWksEFnfs9f9MgQIhAPVhy5wuHxvye2ksRwu+Cc1KJm5yvqn8K7nE5K6/3ZbxAiEAsOjC6SeqsD9SFkY8Sydeuvxlzq2IhaR72iPbSkBmwU0CIDz8MT5/t/uaKFHbT0z7zjPXWfXZTsmwgq2I4c0MomYBAiAJqTxztSnaJCscckt6ozTGK2B37/wjqD7nQ8wG+wthhQIhAIg0W0ojohefzqdJttAfxsc8oCE/3wSjsm2iPEVMx61/ node ./build/index.js",
     "test": "echo \"Testing via Jest\" && tsc --build && sleep 1 && NODE_ENV=test jest"
   },
   "repository": {
